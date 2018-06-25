@@ -1,0 +1,63 @@
+package rsas;
+
+/**
+ *
+ * @author MBIBI PHILIP
+ */
+
+
+import java.io.*;
+import java.util.*;
+import java.lang.*;
+import java.math.*;
+
+public class RSA {
+
+    public static void main(String[] args) 
+    {
+    Scanner traverse=new Scanner(System.in);
+    
+    System.out.println("Message M:");
+    int msg=traverse.nextInt();                                       
+    System.out.println("value of e:");
+    int next=traverse.nextInt();                                       
+    System.out.println("value of n:");
+    int n=traverse.nextInt();                                   
+    
+    
+    int cipher=1;                                                
+    
+    ArrayList list=new ArrayList();                            
+
+        if(next%2==0)
+        {
+        while(next>0)
+        {
+            list.add(2);
+            next=next-2;
+        }
+        }
+        else
+        {
+            while(next>1)
+            {
+                list.add(2);
+                next=next-2;
+            }
+            list.add(1);
+        }    
+    BigInteger temp=new BigInteger("1");           
+    for(int i=0;i<list.size();i++)
+    {
+        int powers=Integer.parseInt(list.get(i).toString());       
+        long temp1=(long)(temp.intValue()*Math.pow(msg, powers))%n;
+        temp=BigInteger.valueOf(temp1);
+    }
+    
+    
+    cipher=temp.intValue()%n;                           
+    System.out.println("Encrypted Message is: "+cipher);
+   
+    }
+    
+}
