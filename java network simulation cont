@@ -1,0 +1,286 @@
+package acl;
+
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+public class ACL {
+
+	public static void main(String[] args) {
+		ArrayList<Result> result = new ArrayList<Result>();//File2Êý¾Ý
+		ArrayList<String> teminal =new ArrayList<String>();//´æ´¢File1ÀïÃæµÄÃüÁî 
+//		StringBuffer sfile1 = new StringBuffer();
+//		StringBuffer sfile2 = new StringBuffer();
+		FileOutputStream output = null;
+		FileInputStream file1 = null;
+		FileInputStream file2 = null;
+		try{
+			String tmp ="";
+			file1 = new FileInputStream(new File(System.getProperty("user.dir")+"/"+"File1"));
+			BufferedReader br1 = new BufferedReader(new InputStreamReader(file1));
+			
+			while((tmp = br1.readLine())!=null){
+				teminal.add(tmp);
+			}
+			
+			file2 = new FileInputStream(new File(System.getProperty("user.dir")+"/"+"File2"));
+			BufferedReader br2 = new BufferedReader(new InputStreamReader(file2));
+			while((tmp = br2.readLine())!=null){
+				String ss[] = tmp.split(" ");
+				result.add(new Result(ss[0],ss[1],""));
+			}
+			output  =  new FileOutputStream(new File(System.getProperty("user.dir")+"/"+"Output"));
+		
+//		Result result1 = new Result("172.16.4.13","172.16.3.2","");
+//		Result result2 = new Result("172.16.5.2","172.16.3.4","");
+//		result.add(result1);
+//		result.add(result2);
+////		teminal.add("access-list 1 deny ip any any");
+//		teminal.add("access-list 1 permit 172.16.4.5 255.255.255.0");
+//		teminal.add("access-list 1 deny 172.16.5.0 0.0.0.255");
+//		
+//		teminal.add("interface E0");
+//		teminal.add("ip access-group 1 out");
+		System.out.println("-------------------------File1--------------------");
+		for(int i=0;i<teminal.size();i++){
+			System.out.println(teminal.get(i));
+		}
+		System.out.println("-------------------------File2--------------------");
+		for(int i=0;i<result.size();i++){
+			System.out.println(result.get(i).getSource()+" "+result.get(i).getDestination());
+		}
+		/**
+		 * ±¾Ìâ×¢ÒâÁËany¹Ø¼ü×ÖµÄ´¦Àí
+		 * standard±ê×¼¸ñÊ½:access-list 1 deny any
+		 * 				  access-list 1 deny 172.16.4.13
+		 * 				  access-list 1 deny 172.16.4.13 0.0.0.0
+		 * extendedÀ©Õ¹¸ñÊ½:access-list 1 deny ip 172.16.4.13 172.16.4.13
+		 * 				  access-list 1 deny ip 172.16.4.13 any
+		 * 				  access-list 1 deny ip any 172.16.4.13 
+		 * 				  access-list 1 deny ip any any 
+		 * 		 		  access-list 1 deny ip any 172.16.4.13 0.0.0.0
+		 * 				  access-list 1 deny ip 172.16.4.13 0.0.0.0 any
+		 * 		          access-list 1 deny ip 172.16.4.13 0.0.0.0 172.16.4.13
+		 * 				  access-list 1 deny ip 172.16.4.13 172.16.4.13 0.0.0.0 
+		 * 				  access-list 1 deny ip 172.16.4.13 0.0.0.0 172.16.4.13 0.0.0.0
+		 * ×¢Òâ£ºÃ¿Ò»×é×îºóÓÐÒ»¾ä ¡°access-list 1 deny ip any any¡±
+		 * ×îºóÁ½ÐÐ¸ñÊ½£ºinterface E0
+		 * 			  ip access-group 1 out/in inºÍoutÃ»¹ØÏµ£¬×ÜÊÇÏÈ´¦ÀísourceÔÙ´¦Àídestination
+		 */
+		for(int i=0;i<result.size();i++){
+			String  dp ="";
+			for(int j=0;j<teminal.size()-2;j++){
+				int w = whichMode(teminal.get(j));
+				if(w!=-1){
+					dp = aclProcess(result.get(i),w,teminal.get(j));
+					if(dp.equals("next")){//ËµÃ÷±¾ÃüÁîºÍ¸ÃIPÃ»¹ØÏµ£¬Ñ­»·ÕÒÏÂÒ»¸öÃüÁî
+						continue;
+					}else{//ÕÒµ½ÁË£¬¼ÆËã³öÀ´ÊÇdeny»¹ÊÇpermit
+						result.get(i).setDp(dp);
+						break;
+					}
+				}else{
+					System.out.println("¸ñÊ½²»¶Ô");
+				}
+				
+			}
+			if(dp.equals("next")){
+				//Èç¹û¶¼Ã»Æ¥Åä¹æÔò£¬ÄÇÃ´Ã¿Ò»×é×îºóÓÐÒ»¾ä ¡°access-list 1 deny ip any any¡±
+				result.get(i).setDp("deny");
+			}
+			
+		}
+		System.out.println("---------------------Output-----------------------");
+		for(int i=0;i<result.size();i++){
+			System.out.println(result.get(i).getSource()+" "+result.get(i).getDestination()+" "+result.get(i).getDp());
+			output.write((result.get(i).getSource()+" "+result.get(i).getDestination()+" "+result.get(i).getDp()+"\n").getBytes());
+		}
+		writeOutFile(result);
+		}catch(Exception e){
+			e.printStackTrace();
+		}finally{
+			try {
+				file1.close();
+				file2.close();
+				output.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	public static void writeOutFile(ArrayList<Result> result){//Ð´½á¹ûµ½Êä³öÎÄ¼þ
+		
+	}
+	public static String subNet(String s,String mask){//Çó
+		String result= "";
+		String ips[]=s.split("\\.");
+		String mks[]=mask.split("\\.");
+//		System.out.println(s+ ips.length+"  "+mask+mks.length);
+		for(int i=0;i<4;i++){
+			Integer tmp = new Integer(ips[i]) & new Integer(mks[i]);
+			result += tmp+".";
+		}
+		return result.substring(0, result.length()-1);
+	}
+	public static String aclProcess(Result result,int whichMode,String t){
+		//ºËÐÄ´¦Àíº¯Êý£¬Ä¿µÄÊÇ½«resultµÄdpÊôÐÔÈ·¶¨ÊÇdeny»¹ÊÇpermit,¸ñÊ½È«Îªout
+		String modes[] = t.split(" ");
+		switch(whichMode){
+			case 1://access-list 1 deny any
+				return modes[2];
+			case 2://access-list 1 deny 172.16.4.13
+				if(result.getSource().equals(modes[3])){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 3://access-list 1 deny 172.16.4.13 0.0.0.0
+				if(subNet(result.getSource(),modes[4]).equals(subNet(modes[3],modes[4]))){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 4://access-list 1 deny ip any any 
+				return modes[2];
+			case 5://access-list 1 deny ip any 172.16.4.13 
+				if(result.getDestination().equals(modes[5])){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 6://access-list 1 deny ip 172.16.4.13 any
+				if(result.getSource().equals(modes[4])){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 7://access-list 1 deny ip 172.16.4.13 172.16.4.13
+				if(result.getSource().equals(modes[4])&&result.getDestination().equals(modes[5])){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 8://access-list 1 deny ip any 172.16.4.13 0.0.0.0
+				if(subNet(result.getDestination(),modes[6]).equals(subNet(modes[5],modes[6]))){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 9://access-list 1 deny ip 172.16.4.13 0.0.0.0 any
+				if(subNet(result.getSource(),modes[5]).equals(subNet(modes[4],modes[5]))){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 10://access-list 1 deny ip 172.16.4.13 0.0.0.0 172.16.4.13
+				if(subNet(result.getSource(),modes[5]).equals(subNet(modes[4],modes[5]))
+						&&result.getDestination().equals(modes[6])){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 11://access-list 1 deny ip 172.16.4.13 172.16.4.13 0.0.0.0
+				if(result.getSource().equals(modes[4])&&
+						subNet(result.getDestination(),modes[6]).equals(subNet(modes[5],modes[6]))){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			case 12://access-list 1 deny ip 172.16.4.13 0.0.0.0 172.16.4.13 0.0.0.0
+				if(subNet(result.getSource(),modes[5]).equals(subNet(modes[4],modes[5]))
+						&&subNet(result.getDestination(),modes[7]).equals(subNet(modes[6],modes[7]))){
+					return modes[2];
+				}else{
+					return "next";
+				}
+			default:
+				return "next";
+		}
+	}
+	public static int whichMode(String t){//³ÌÐòÊôÓÚÄÄÒ»ÖÖÃüÁî¸ñÊ½ 12ÖÖÇé¿ö
+		int flag = -1;
+		String  modes[] = t.split(" ");
+		switch(modes.length){
+			case 4:
+				if(modes[3].equals("any")){
+					flag=1;
+				}else{
+					flag=2;
+				}
+				break;
+			case 5:
+				flag=3;
+				break;
+			case 6:
+				if(modes[4].equals("any")&&modes[5].equals("any")){
+					flag=4;
+				}else if(modes[4].equals("any")&&!modes[5].equals("any")){
+					flag=5;
+				}else if(!modes[4].equals("any")&&modes[5].equals("any")){
+					flag=6;
+				}else{
+					flag=7;
+				}
+				break;
+			case 7:
+				if(modes[4].equals("any")){
+					flag=8;
+				}else if(modes[6].equals("any")){
+					flag=9;
+				}else if(modes[5].contains("255")||modes[5].contains("0.0.0.0")){
+					flag=10;
+				}else{
+					flag=11;
+				}
+				break;
+			case 8:
+				flag=12;
+				break;
+			default:
+				flag=-1;
+				break;
+		}
+		return flag;
+	}
+
+}
+class Result{
+	
+	private String source;
+	@Override
+	public String toString() {
+		return "Result [source=" + source + ", destination=" + destination
+				+ ", dp=" + dp + "]";
+	}
+	private String destination;
+	private String dp;//´ú±í(deny/permit)
+	public Result(String source, String destination, String dp) {
+		this.source = source;
+		this.destination = destination;
+		this.dp = dp;
+	}
+	public String getSource() {
+		return source;
+	}
+	public void setSource(String source) {
+		this.source = source;
+	}
+	public String getDestination() {
+		return destination;
+	}
+	public void setDestination(String destination) {
+		this.destination = destination;
+	}
+	public String getDp() {
+		return dp;
+	}
+	public void setDp(String dp) {
+		this.dp = dp;
+	}
+}
+
