@@ -1,0 +1,110 @@
+package replacefilecontent;
+
+/**
+ *
+ * @author MBIBI PHILIP
+ */
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+class replaceFileContent {
+   public static String convertToBin(String s) {
+       byte[] bytes = s.getBytes();
+       StringBuilder binary = new StringBuilder();
+       for (byte b : bytes) {
+           int val = b;
+           for (int i = 0; i < 8; i++) {
+               binary.append((val & 128) == 0 ? 0 : 1);
+               val <<= 1;
+           }
+           // binary.append('');
+       }
+       System.out.println("'" + s + "' to binary: " + binary.toString());
+       return binary.toString().replaceAll("11111", "111110");
+
+   }
+
+   public static String convertToAscii(String text) {
+       int index = 0;
+       StringBuffer str = new StringBuffer();
+       while (index < text.length()) {
+           String string = text.substring(index,
+                   Math.min(index + 8, text.length()));
+           str.append((char) Integer.parseInt(string, 2));
+           index += 8;
+       }
+       System.out.println(str.toString());
+       return str.toString();
+   }
+
+   @SuppressWarnings({ "rawtypes", "unchecked" })
+   public static void main(String args[]) {
+       
+       String inFile = "Ascii.data.txt";// give your in file
+       String outFile = "Binary.data.txt";// give your out file
+       try {
+
+           ArrayList storeWordList = new ArrayList();
+           FileInputStream fstream = new FileInputStream(inFile);
+           // Get the object of DataInputStream
+           DataInputStream in = new DataInputStream(fstream);
+           BufferedReader br = new BufferedReader(new InputStreamReader(in));
+           String strLine;
+           // Read File Line By Line
+           while ((strLine = br.readLine()) != null) {// lines
+               storeWordList.add(convertToBin(strLine));
+           }
+           // Close the input stream
+           in.close();
+
+           // ///////////writing binary data to file
+
+           Writer output = null;
+           File file = new File(outFile);
+           output = new BufferedWriter(new FileWriter(file));
+           for (Iterator iter = storeWordList.iterator(); iter.hasNext();) {
+               output.write((String) iter.next() + "\r\n");
+           }
+           output.close();
+           System.out.println("Your file has been written to binary data");
+
+           // ///////////converting binary to ascii reading from file
+           inFile = outFile;
+           storeWordList = new ArrayList();
+           fstream = new FileInputStream(inFile);
+           // Get the object of DataInputStream
+           in = new DataInputStream(fstream);
+           br = new BufferedReader(new InputStreamReader(in));
+           strLine = "";
+           // Read File Line By Line
+           while ((strLine = br.readLine()) != null) {// lines
+               strLine.replaceAll("111110", "11111");
+               storeWordList.add(convertToAscii(strLine));
+           }
+           // Close the input stream
+           in.close();
+
+           // ///////////writing data to file from Binary to Ascii
+           outFile = "fromBinToAscii.data.txt";
+           output = null;
+           file = new File(outFile);
+           output = new BufferedWriter(new FileWriter(file));
+           for (Iterator iter = storeWordList.iterator(); iter.hasNext();) {
+               output.write((String) iter.next() + "\r\n");
+           }
+           output.close();
+           System.out.println("Your file has been written back to ascii data");
+           // ///////////writing data to file from Binary to Ascii
+       } catch (Exception e) {// Catch exception if any
+           System.err.println("Error: " + e.getMessage());
+       }
+   }
+}
