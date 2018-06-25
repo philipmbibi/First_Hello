@@ -1,0 +1,87 @@
+package com.example.mbibiphilip.json_application;
+import java.net.ResponseCache;
+import android.support.annotation.StringRes;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import android.app.ProgressDialog;
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity {
+
+
+    ListView informationList;
+    String url = "http://www.infrastructure.gc.ca/alt-format/opendata/project-list-liste-de-projets-bil.json";
+    ProgressDialog dialog;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        EditText edit = (EditText) findViewById(R.id.search);
+
+        informationList = (ListView)findViewById(R.id.List);
+
+        dialog = new ProgressDialog(this);
+        dialog.setMessage("Loading....");
+        dialog.show();
+
+        StringRequest request = new StringRequest(url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String string) {
+                parseJsonData(string);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+                Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            }
+        });
+
+            RequestQueue rQueue = Volley.newRequestQueue(MainActivity.this);
+        rQueue.add(request);
+        }
+    void parseJsonData(String jsonString) {
+        try {
+            JSONObject object = new JSONObject(jsonString);
+            JSONArray Array = object.getJSONArray("data");
+            ArrayList al = new ArrayList();
+
+            for(int i = 0; i < Array.length(); ++i) {
+                for (int j=0;j<10;j++) {
+                    JSONArray Array2 = Array.getJSONArray(i);
+                    al.add(Array2.getString(j));
+                    //al.add(Array.getString(i));
+
+                }
+            }
+
+
+            ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, al);
+            informationList.setAdapter(adapter);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        dialog.dismiss();
+    }
+}
+
+
