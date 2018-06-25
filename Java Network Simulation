@@ -1,0 +1,140 @@
+package javaapplication5;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
+
+
+public class JavaApplication5 {
+
+    // Create the File related IO object
+    BufferedReader br = null;
+    PrintWriter out = null;
+    // Create the HashTable
+    Map<Object,Object> data;
+    
+    private void initializeData() {
+        // Instantiate the Map object
+        data = new HashMap<>();
+    }
+    
+    private void loadFileContent(final String fileName) {
+        // Instantiate the FileReader
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(fileName));
+            String content;
+            while((content = br.readLine()) != null) {
+                String[] records = content.split(" ");
+                data.put(records[0], records[1]);
+            }
+            br.close();
+        }catch(FileNotFoundException fnfe) {
+            System.err.println("The requested file does not exists");
+        }catch(IOException ie) {
+            System.err.println("Some problems were encountered while processing the file");
+        }
+    }
+     private void loadPort(final String fileName, final String key) {
+        // Instantiate the FileReader
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(fileName));
+            String content;
+            
+            while((content = br.readLine()) != null) {
+                String records[] = content.split(" ");
+                data.put(records[0], records[1]);
+           
+            }
+            br.close();
+        }catch(FileNotFoundException fnfe) {
+            System.err.println("The requested file does not exists");
+        }catch(IOException ioe) {
+            System.err.println("Some problems were encountered while processing the file");
+        }
+    }
+    
+    private void displayFileContent() {
+        Set<Object> keys = data.keySet();
+        for(Object key : keys) {
+            System.out.println(key + " "+ data.get(key));
+        }
+    }
+    
+    private void updateFileContent(final String fileName, 
+            final String key, final int value) {
+            data.put(key, value);
+        // Write the content to the file
+        try {
+            out = new PrintWriter(new FileWriter(fileName,false), true);
+           
+            for(Object k : data.keySet()) {
+                
+                out.println(k+" "+data.get(k));
+            }System.out.println("Updating File......");
+            
+            System.out.println();
+            out.close();
+        }catch(IOException ioe) {
+            System.err.println("Could not write to file");
+        }
+    }
+    
+    private void acceptUserInput() {
+        Scanner input = new Scanner(System.in);
+        Scanner in = new Scanner(System.in);
+
+         System.out.print("THIS BRIDGE HAS ONLY 3 PORTS\n");
+          System.out.print("==============================\n");
+        System.out.print("Source Address: ");
+        String key = input.next();
+         key = key.toUpperCase();
+        System.out.print("Enter Port Number: ");
+        int newValue = in.nextInt();
+        System.out.print("Enter Destination Address: ");
+        
+        String Daddress = input.next();
+        Daddress = Daddress.toUpperCase();
+         if (newValue < 4) {
+            
+         
+                try {
+            Thread.sleep(1000);
+            updateFileContent("file.txt", key, newValue);
+        }catch(InterruptedException ie) {}
+            
+          System.out.print("=============================\n ");
+
+        System.out.print("UPDATED FDB TABLE\n"); 
+        displayFileContent();
+    
+        
+       
+        System.out.print("MESSAGE SENT :" +key+"    " +Daddress+"   "+newValue +"   "+"DATA\n");
+        }
+        else{
+        System.out.println("Port Not Availble ");
+        System.out.println("Discarding  File......");
+        System.out.println(".......File Discarded");
+        }
+    }   
+    
+   
+    public static void main(String[] args) {
+       
+        JavaApplication5 fu = new JavaApplication5();
+        fu.initializeData();
+        fu.loadFileContent("file.txt");
+        fu.acceptUserInput();
+        
+    }
+    
+}
